@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    hub.jupyter.org/username: abhi
+    kubernetes.io/psp: eks.privileged
+  labels:
+    app: jupyterhub
+    chart: jupyterhub-1.1.1
+    component: singleuser-server
+    heritage: jupyterhub
+    hub.jupyter.org/network-access-hub: "true"
+    release: fargate
+  name: jupyter-abhilash
+  namespace: fargate
+spec:
+  selector:
+    matchLabels:
+      component: singleuser-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: singleuser-server
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - start-singleuser.sh
+        - --ip=0.0.0.0
+        - --port=8888
+        - --SingleUserNotebookApp.default_url=/tree
+        - --debug
+        env:
+        - name: JUPYTERHUB_API_TOKEN
+          value: 7b707dbcd0d44256984625676002ce23
+        - name: JPY_API_TOKEN
+          value: 7b707dbcd0d44256984625676002ce23
+        - name: JUPYTERHUB_ADMIN_ACCESS
+          value: "1"
+        - name: JUPYTERHUB_CLIENT_ID
+          value: jupyterhub-user-abhi
+        - name: JUPYTERHUB_COOKIE_OPTIONS
+          value: '{"SameSite": "None", "Secure": true}'
+        - name: JUPYTERHUB_HOST
+        - name: JUPYTERHUB_OAUTH_CALLBACK_URL
+          value: /user/abhi/oauth_callback
+        - name: JUPYTERHUB_USER
+          value: abhi
+        - name: JUPYTERHUB_SERVER_NAME
+        - name: JUPYTERHUB_API_URL
+          value: http://hub:8081/hub/api
+        - name: JUPYTERHUB_ACTIVITY_URL
+          value: http://hub:8081/hub/api/users/abhi/activity
+        - name: JUPYTERHUB_BASE_URL
+          value: /
+        - name: JUPYTERHUB_SERVICE_PREFIX
+          value: /user/abhi/
+        - name: MEM_LIMIT
+          value: "4294967296"
+        - name: MEM_GUARANTEE
+          value: "1073741824"
+        - name: CPU_LIMIT
+          value: "2.0"
+        - name: CPU_GUARANTEE
+          value: "0.5"
+        - name: CHOWN_HOME
+          value: "yes"
+        - name: Editor
+          value: vim
+        - name: USER_ROLE
+          value: Instructor
+        - name: JUPYTER_IMAGE_SPEC
+          value: illumidesk/umich-notebook:julia-1.6.1
+        - name: JUPYTER_IMAGE
+          value: illumidesk/umich-notebook:julia-1.6.1
+        image: illumidesk/umich-notebook:julia-1.6.1
+        imagePullPolicy: Always
+        lifecycle: {}
+        name: notebook
+        ports:
+        - containerPort: 8888
+          name: notebook-port
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4294967296"
+          requests:
+            cpu: 500m
+            memory: "1073741824"
+        securityContext:
+          runAsGroup: 0
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /home/jovyan
+          name: home
+          subPath: fargate/home/abhi
+        - mountPath: /srv/nbgrader/exchange
+          name: home
+          subPath: fargate/exchange/
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      imagePullSecrets:
+      - name: image-pull-secret
+      preemptionPolicy: PreemptLowerPriority
+      priority: 0
+      restartPolicy: Always
+      schedulerName: fargate-user-scheduler
+      securityContext:
+        fsGroup: 0
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: home
+        persistentVolumeClaim:
+          claimName: shared-pvc-fargate

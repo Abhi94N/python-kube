@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter-abhi
+  annotations:
+    CapacityProvisioned: 2vCPU 4GB
+  labels:
+    component: singleuser-server
+spec:
+  selector:
+    matchLabels:
+      component: singleuser-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: singleuser-server
+    spec:
+      containers:
+      - name: jupyter-abhi
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        image: illumidesk/illumidesk-notebook:latest
+        env:
+        - name: CHOWN_HOME
+          value: "yes"     
+        volumeMounts:
+        - name: home
+          mountPath: /home/jovyan
+          subPath: fargate/home/abhi
+        - mountPath: /srv/nbgrader/exchange
+          name: home
+          subPath: fargate/exchange/
+      volumes:
+      - name: home
+        persistentVolumeClaim:
+          claimName: shared-pvc-fargate

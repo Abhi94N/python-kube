@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jupyter-abhi
+  namespace: fargate
+  annotations:
+    CapacityProvisioned: 2vCPU 4GB
+spec:
+  containers:
+  - name: jupyter-abhi
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
+    image: illumidesk/illumidesk-notebook:latest
+    env:
+    - name: CHOWN_HOME
+      value: "yes"     
+    volumeMounts:
+    - name: home
+      mountPath: /home/jovyan
+      subPath: fargate/home/abhi
+    - mountPath: /srv/nbgrader/exchange
+      name: home
+      subPath: fargate/exchange/
+  volumes:
+  - name: home
+    persistentVolumeClaim:
+      claimName: shared-pvc-fargate
